@@ -1,7 +1,8 @@
 import numbers
 import random
+import sys
 
-class ErrcodeHandlerError(Exception):
+class ErrcodeHandleError(Exception):
     def __init__(self, message = None):
         if message is None:
             raise ValueError("message cannot be None")
@@ -110,7 +111,6 @@ class ErrcodeHandler:
         
         index = -1;
         module = self.modules.get(mod_name)
-        retval = None
 
         if module is None:
             raise ErrcodeHandleError("mod_name is not associated with a registered module.")
@@ -119,7 +119,7 @@ class ErrcodeHandler:
             if not errcode_input in module.errcodes_key_name:
                 raise ValueError("errcode_input is not registered with any errcode.")
 
-            index = module.errcodes_key_name[name]
+            index = module.errcodes_key_name[errcode_input]
 
         elif isinstance(errcode_input, numbers.Number):
             index = errcode_input
@@ -129,3 +129,11 @@ class ErrcodeHandler:
         return module.errcodes[index].message
 
 ErrcodeHandler.instance = ErrcodeHandler()
+
+def die(mod_name = None, errcode = None):
+    if mod_name is None:
+        raise ValueError("mod_name cannot be None")
+    if errcode is None:
+        raise ValueError("errcode cannot be None")
+    quit(errcode)
+
