@@ -6,19 +6,24 @@ class ProjectManagementError(Exception):
     def __init__(self, message):
         super().__init__(self, "sharedlib: Project Management Error {0}".format(message))
 
+class RequiredFilesystemNodeMissingError(Exception):
+    def __init__(self, node):
+        super().__init__(self, "Missing required filesystem node: {0}".format(node))
+
 class FilesystemNode:
     class NodeType(enum.Enum):
         FILE = 0
         DIRECTORY = 1
         #Don't need symlink support now, but when we add it, that
-        #should a subclass in order to include symlink-specific fields.
+        #should be a subclass in order to include symlink-specific fields.
 
-    def __init__(self,
+    def __init__(
+                    self,
                     name = None,
                     path = None,
                     node_type = None,
                     required = False
-                 ):
+                ):
 
         if name is None:
             raise ValueError("name cannot be None.")
@@ -41,7 +46,6 @@ class FilesystemNode:
 
 
     def check(self):
-        #Hello
         if not self.path.exists():
             return False
 
@@ -56,50 +60,51 @@ class FilesystemNode:
 
     def __str__(self):
         return "Project Name: {0}\nPath: {1}\nNode Type: {2}\n\n".format(
-                                                                      self.name,
-                                                                      self.path,
-                                                                      self.node_type
-                                                                  )
+                                                                            self.name,
+                                                                            self.path,
+                                                                            self.node_type
+                                                                        )
 
-#Verification is defined as all required project components existing and
-#being of the correct node type on disk.
 
 #The only optional filesystem node component we set up in the initializer
 #is "third_party", and that's only because, in the future, there will
 #be some useful automations we can do if we know we have a third_party
-#asset directory, and where it is.
+#asset directory, and we know where it is.
 
 class Project
     current_project = None
     ROOT_FILESYTEM_NODE_KEY="root"
     @staticmethod
     def registerProject(
-                name = None,
-                path = None,
-                third_party_dir_name = "third_party",
-                scripts_dir_name = "scripts",
-                source_dir_name = "src"
-            ):
+                           name = None,
+                           path = None,
+                           third_party_dir_name = "third_party",
+                           scripts_dir_name = "scripts",
+                           source_dir_name = "src"
+                       ):
         #Name
         if Project.current_project is None:
             Project.current_project = Project(
-                                      name,
-                                      path,
-                                      third_party_dir_name,
-                                      source_dir_name
-                                 )
+                                                  name,
+                                                  path,
+                                                  third_party_dir_name,
+                                                  source_dir_name
+                                             )
         else:
            raise ProjectManagementError("Only 1 current project at a time is supported at this time.")
         
-    def __init__(self,
-                name = None,
-                path = None,
-                third_party_dir_name = "third_party",
-                script_dir_name = "scripts",
-                source_dir_name = "src",
-            ):
+    def __init__(
+                    self,
+                    name = None,
+                    path = None,
+                    third_party_dir_name = "third_party",
+                    script_dir_name = "scripts",
+                    source_dir_name = "src",
+                ):
 
+        self.third_party_dir_name = third_party_dir_name
         self.have_all_optional_nodes = False
+        self.checkRan = False
 
         self.__hard_required_filesystem_nodes={}  #These HAVE to exist. Else, the Project framework falls apart.
         self.supplemental_filesystem_nodes={} #These CAN be required by the project itself, but not the Project framework.
@@ -111,50 +116,49 @@ class Project
         if path is None:
             raise ValueError("path cannot be none.")
         self.__registerRequiredFilesystemNode(
-                                   Project.ROOT_FILESYSTEM_NODE_KEY,
-                                   pathlib.Path(path),
-                                   FilesystemNode.NodeType.DIRECTORY
-                               )
+                                                 Project.ROOT_FILESYSTEM_NODE_KEY,
+                                                 pathlib.Path(path),
+                                                 FilesystemNode.NodeType.DIRECTORY
+                                             )
 
 
 
         #Required Filesystem Nodes:
         if script_dir_name is None:
             raise ValueError("script_dir_name cannot be None.")
-        #self.script_dir = self.path / script_dir_name
         self.__registerRequiredFilesystemNode(
-                                   script_dir_name,
-                                   self.path / script_dir_name,
-                                   FilesystemNode.NodeType.DIRECTORY,
-                               )
+                                                 script_dir_name,
+                                                 self.path / script_dir_name,
+                                                 FilesystemNode.NodeType.DIRECTORY,
+                                             )
 
 
         if source_dir_name is None:
             raise ValueError("source_dir_name cannot be None.")
         
-        #self.source_dir = self.path / source_dir_name
         self.__registerRequiredFilesystemNode(
-                                   source_dir_name,
-                                   self.path / source_dir_name,
-                                   FilesystemNode.NodeType.DIRECTORY,
-                               )
+                                                 source_dir_name,
+                                                 self.path / source_dir_name,
+                                                 FilesystemNode.NodeType.DIRECTORY,
+                                             )
 
         #Optional Filesystem Nodes 
-        if not third_party_dir_name is None:
+        if not self.third_party_dir_name is None:
             self.registerSupplementalFilesystemNode(
-                third_party_dir_name,
-                self.path / third_party_dir_name,
-                NodeType.DIRECTORY,
-                False
-            )
+                                                       self.third_party_dir_name,
+                                                       self.path / third_party_dir_name,
+                                                       NodeType.DIRECTORY,
+                                                       False
+                                                   )
         else:
             raise ValueError("third_party_dir_name cannot be None.")
 
-    def __registerRequiredFilesystemNode(self,
-                                    name = None,
-                                    path = None,
-                                    node_type = None
-                                ):
+    def __registerRequiredFilesystemNode(
+                                            self,
+                                            name = None,
+                                            path = None,
+                                            node_type = None
+                                        ):
         if name is None:
             raise ValueError("name cannot be None.")
 
@@ -165,12 +169,13 @@ class Project
        self.__hard_required_filesystem_node[name] = FilesystemNode(name, path, node_type, True)
 
 
-    def registerSupplementalFilesystemNode(self,
-                                      name = None,
-                                      path = None,
-                                      node_type = None,
-                                      required = False
-                                      ):
+    def registerSupplementalFilesystemNode(
+                                              self,
+                                              name = None,
+                                              path = None,
+                                              node_type = None,
+                                              required = False
+                                          ):
          if name is None:
              raise ValueError("name cannot be None.")
 
@@ -179,10 +184,30 @@ class Project
 
          self.supplemental_filesystem_node[name] = FilesystemNode(name, path, node_type, required)
 
-    def checkProjectTree(self):
-        #Hell
-        
-        self.is_verified = True
-        return True
+
+    #If a required filesystem node is missing, we throw an exception.
+    #If an optional filesystem node is missing, we just return tuple: success, arr_of_missing_paths:
+    def __checkProjectTree(self):
+        #check_required
+        for var in self.__hard_required_filesystem_nodes:
+            if not var.exists()
+               raise RequiredFilesystemNodeMissingError(var)
+
+        missing = []
+        found_missing = False
+        for var in self.supplemental_filesystem_nodes:
+            if not var.exists():
+                found_missing = True
+                missing.append(var.path)
+        return found_missing, missing
+
+    def haveThirdParty(self):
+        return not self.third_party_dir_name is None
+
+    def getThirdPartyPath(self):
+        if not self.haveThirdParty()
+            return None
+
+        return self.supplemental_filesystem_nodes[self.third_party_dir_name].path
 
 
