@@ -4,16 +4,17 @@ import pathlib
 import pyrsistent
 import sys
 
-from . import conflict_resolution.ImmutableObjectWriteError as ImmutableObjectWriteError
-from . import conflict_resolution.ReadOnlyAfterCommitCommittable as ReadOnlyAfterCommitCommittable
+#from .. import conflict_resolution
+from ..conflict_resolution import ImmutableObjectWriteError as ImmutableObjectWriteError
+from ..conflict_resolution import ReadOnlyAfterCommitCommittable as ReadOnlyAfterCommitCommittable
 
 class ProjectManagementError(Exception):
     def __init__(self, message):
         super().__init__(self, "sharedlib.project_managment: Project Management Error: {0}".format(message))
 
-class RequiredFilesystemNodeMissingError(ProjectManagmentError):
+class RequiredFilesystemNodeMissingError(ProjectManagementError):
     def __init__(self, node):
-        super().__init__(self, """Missing required filesystem node:
+        super().__init__("""Missing required filesystem node:
 
                          {0}
 
@@ -49,8 +50,8 @@ class FilesystemNode(pyrsistent.PClass):
     node_type = pyrsistent.field(
                             type=FilesystemNodeType,
                             mandatory=True,
-                            invariant=lamda x: (
-                                        x in project_management.FilesystemNodeType, 
+                            invariant=lambda x: (
+                                        x in FilesystemNodeType, 
                                         'node_type is not a valid member of FileNodeType'
                                         )
                             )
@@ -97,9 +98,9 @@ class Project(ReadOnlyAfterCommitCommittable):
                                        )
                            )
         path = pyrsistent.field(
-                           type=str,
+                           type=pathlib.Path,
                            invariant=lambda x:(
-                                       (),
+                                       (x is not None),
                                        'name is None or empty'
                                        )
                            )
@@ -107,27 +108,30 @@ class Project(ReadOnlyAfterCommitCommittable):
         third_party_dir_name = pyrsistent.field(
                                            type=str,
                                            invariant=lambda x:(
-                                                       (x is not in (None, '')),
+                                                       (x not in (None, '')),
                                                        'third_party_dir_name is None or empty.'
                                                        )
                                            )
         script_dir_name = pyrsistent.field(
                                       type=str,
                                       invariant=lambda x:(
-                                                  (x is not in (None, '')),
+                                                  (x not in (None, '')),
                                                   "script_dir_name is None or empty."
                                                   )
                                       )
         source_dir_name = pyrsistent.field(
                                       type=str,
                                       invariant=lambda x:(
-                                                  (x is not in (None, '')),
+                                                  (x not in (None, '')),
                                                   'source_dir_name is None or empty.'
                                                   )
                                       )
 
     KWARG_REQUIRED_ARGUMENTS=["name", "path"]
     ROOT_FILESYSTEM_NODE_KEY="root"
+    SCRIPTS_FILESYSTEM_NODE_KEY="scripts"
+    SOURCE_FILESYSTEM_NODE_KEY="source"
+    THIRD_PARTY_FILESYSTEM_NODE_KEY="third_party"
     DEFAULT_SCRIPT_DIR_NAME="scripts"
     DEFAULT_THIRD_PARTY_DIR_NAME="third_party"
     DEFAULT_SOURCE_DIR_NAME="src"
@@ -139,11 +143,11 @@ class Project(ReadOnlyAfterCommitCommittable):
         path = pathlib.Path(kwargs["path"])
 
         self.__persistent_metadata = self.__ProjectMetadata(
-                                         name,
-                                         path,
-                                         kwargs.get("third_party_dir_name", self.DEFAULT_THIRD_PARTY_DIR_NAME),
-                                         kwargs.get("script_dir_name", self.DEFAULT_SCRIPT_DIR_NAME),
-                                         kwargs.get("source_dir_name", self.DEFAULT_SOURCE_DIR_NAME)
+                                         name = name,
+                                         path = path,
+                                         third_party_dir_name = kwargs.get("third_party_dir_name", self.DEFAULT_THIRD_PARTY_DIR_NAME),
+                                         script_dir_name = kwargs.get("script_dir_name", self.DEFAULT_SCRIPT_DIR_NAME),
+                                         source_dir_name = kwargs.get("source_dir_name", self.DEFAULT_SOURCE_DIR_NAME)
                                          )
 
         self.__in_workable_state = False
@@ -157,12 +161,10 @@ class Project(ReadOnlyAfterCommitCommittable):
                                                  FilesystemNodeType.DIRECTORY
                                              )
 
-        rootNode = self.__hard_required_filesystem_nodes[self.ROOT_FILESYSTEM_NODE_KEY]
-
 
         #Required Filesystem Nodes:
         self.__registerRequiredFilesystemNode(
-                                                 self.persistent_metadata.script_dir_name,
+                                                 self.SCRIPTS_FILESYSTEM_NODE_KEY,
                                                  path / self.__persistent_metadata.script_dir_name,
                                                  FilesystemNodeType.DIRECTORY,
                                              )
@@ -170,14 +172,14 @@ class Project(ReadOnlyAfterCommitCommittable):
 
         
         self.__registerRequiredFilesystemNode(
-                                                 self.persistent_metadata.source_dir_name,
+                                                 self.SOURCE_FILESYSTEM_NODE_KEY,
                                                  path / self.__persistent_metadata.source_dir_name,
                                                  FilesystemNodeType.DIRECTORY,
                                              )
 
         #Optional Filesystem Nodes 
         self.registerSupplementalFilesystemNode(
-                                                   self.persistent_metadata.third_party_dir_name,
+                                                   self.THIRD_PARTY_FILESYSTEM_NODE_KEY,
                                                    path / self.__persistent_metadata.third_party_dir_name,
                                                    FilesystemNodeType.DIRECTORY,
                                                    False
@@ -186,7 +188,7 @@ class Project(ReadOnlyAfterCommitCommittable):
     def onVerifyKwargs(self, **kwargs):
         #Hello
         size = len(kwargs)
-        if size < self.KWARG_ARGUMENT_REQUIRED_COUNT:
+        if size < len(self.KWARG_REQUIRED_ARGUMENTS):
             raise ReadOnlyAfterCommitCommittable.KwargVerificationError("Too few arguments")
 
         for var in self.KWARG_REQUIRED_ARGUMENTS:
@@ -231,7 +233,12 @@ class Project(ReadOnlyAfterCommitCommittable):
                                         ):
         if self.isCommitted():
             raise ImmutableObjectWriteError()
-        self.__hard_required_filesystem_nodes[name] = FilesystemNode(name, path, node_type, True)
+        self.__hard_required_filesystem_nodes[name] = FilesystemNode(
+                                                                name = name, 
+                                                                path = path, 
+                                                                node_type = node_type, 
+                                                                required = True
+                                                                )
 
 
     def registerSupplementalFilesystemNode(
@@ -243,34 +250,39 @@ class Project(ReadOnlyAfterCommitCommittable):
                                           ):
          if self.isCommitted():
              raise ImmutableObjectWriteError()
-         self.__supplemental_filesystem_nodes[name] = FilesystemNode(name, path, node_type, required)
+         self.__supplemental_filesystem_nodes[name] = FilesystemNode(
+                                                                name = name, 
+                                                                path = path, 
+                                                                node_type = node_type, 
+                                                                required = required
+                                                                )
 
     def onCommit(self):
         super().commit()
         if not self.__in_workable_state:
             self.checkProjectTree()
         self.__supplemental_filesystem_nodes = pyrsistent.freeze(self.__supplemental_filesystem_nodes)
-        self.__hard_required_filesystem_nodes  pyrsistent.freeze(self.__supplemental_filesystem_nodes)
+        self.__hard_required_filesystem_nodes =  pyrsistent.freeze(self.__supplemental_filesystem_nodes)
 
 
     #If a required filesystem node is missing, we throw an exception.
     #If an optional filesystem node is missing, we just return tuple: success, arr_of_missing_paths:
     def checkProjectTree(self):
         #check_required
-        for var in self.__hard_required_filesystem_nodes:
-            if not var.exists():
-               raise RequiredFilesystemNodeMissingError(var)
+
+        supplemental_list = list(self.__supplemental_filesystem_nodes.values())
+        combined_restricted_list = list(self.__hard_required_filesystem_nodes.values())
+        combined_restricted_list.append([x for x in supplemental_list if x.required == True ])
 
         missing = None
         found_missing = False
-        for var in self.__supplemental_filesystem_nodes:
+        for var in combined_restricted_list:
             if not var.check():
-                if var.required:
-                    raise RequiredFilesystemNodeMissingError(var)
                 found_missing = True
                 if missing is None:
                     missing = []
                 missing.append(var.path)
+                raise RequiredFilesystemNodeMissingError(var)
 
         self.__in_workable_state = True
         return missing
@@ -286,10 +298,35 @@ class Project(ReadOnlyAfterCommitCommittable):
             return None
         return self.__supplemental_filesystem_nodes[self.persistent_metadata.third_party_dir_name].path
 
-    def getSupplementalFilesystemNodes():
-        return copy.copy(self.__supplemental_filesystem_nodes)
+    def getSupplementalFilesystemNodes(self):
+        retval = None
+        if not self.isCommitted():
+            retval = copy.copy(self.__supplemental_filesystem_nodes)
+        else:
+            #When an object of this class is "committed",
+            #the type of "self.__supplemental_filesystem_nodes"
+            #changes to "PMap" (a part of Pyrsistent),
+            #which automatically deep-copies itself
+            #when one attempts to save a reference to it, or
+            #assign it to a variable.
+            retval = self.__supplemental_filesystem_nodes
 
+        return retval
 
+    def getHardRequiredFilesystemNodes(self):
+        retval = None
+        if not self.isCommitted():
+            retval = copy.copy(self.__hard_required_filesystem_nodes)
+        else:
+            #When an object of this class is "committed",
+            #the type of "self.__hard_required_filesystem_nodes"
+            #changes to "PMap" (a part of Pyrsistent),
+            #which automatically deep-copies itself
+            #when one attempts to save a reference to it, or
+            #assign it to a variable.
+            retval = self.__hard_required_filesystem_nodes
+
+        return retval
 
     #Useful if we need to prevent anything else from using the Project while
     #we prepare the filesystem in some way, like installing dependencies.
@@ -311,18 +348,19 @@ __current_project = None
 def registerProject(
                        name = None,
                        path = None,
-                       third_party_dir_name = DEFAULT_THIRD_PARTY_DIR_NAME,
-                       script_dir_name = DEFAULT_SCRIPT_DIR_NAME,
-                       source_dir_name = DEFAULT_SOURCE_DIR_NAME
+                       third_party_dir_name = Project.DEFAULT_THIRD_PARTY_DIR_NAME,
+                       script_dir_name = Project.DEFAULT_SCRIPT_DIR_NAME,
+                       source_dir_name = Project.DEFAULT_SOURCE_DIR_NAME
                    ):
+    global __current_project
 
-    if __current_project is None:
+    if  __current_project is None:
         __current_project = Project(
-                                  name,
-                                  path,
-                                  third_party_dir_name,
-                                  script_dir_name,
-                                  source_dir_name
+                                  name = name,
+                                  path = path,
+                                  third_party_dir_name = third_party_dir_name,
+                                  script_dir_name = script_dir_name,
+                                  source_dir_name = source_dir_name
                              )
     else:
        raise ProjectManagementError("Only 1 current project at a time is supported at this time.")

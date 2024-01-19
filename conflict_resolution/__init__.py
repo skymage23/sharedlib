@@ -57,31 +57,31 @@ class ReadOnlyAfterCommitCommittable(Committable):
         self.__ro_committable_metadata = {}
         self.__ro_committable_metadata["committed"] = False
 
-        if not self.onVerifyKwargs(**kwargs):
+        if self.onVerifyKwargs(**kwargs):
            self.onInitialize(**kwargs)
         else:
-            raise KwargVerificationError("onVerifyKwargs returned False, indicating general failure.")
+            raise self.KwargVerificationError("onVerifyKwargs returned False, indicating general failure.")
 
     def commit(self):
         if self.__ro_committable_metadata["committed"] == True:
             raise DoubleCommitError()
 
         self.onCommit()
-        self.__metadata["committed"] = True
-        self.__metadata = pyrsistent.freeze(self.metadata)
+        self.__ro_committable_metadata["committed"] = True
+        self.__ro_committable_metadata = pyrsistent.freeze(self.__ro_committable_metadata)
 
     #Keep people from shooting themselves in the foot.
-    def onVerifyKwargs(self, **kwargs)
-        raise KwargVerificationCallbackMissingError()
+    def onVerifyKwargs(self, **kwargs):
+        raise self.KwargVerificationCallbackMissingError()
 
     def onInitialize(self, **kwargs):
-        raise InitializationCallbackMissingError()
+        raise self.InitializationCallbackMissingError()
 
     def onCommit(self):
         pass
 
-    def isCommited(self):
-        return self.metadata["committed"]
+    def isCommitted(self):
+        return self.__ro_committable_metadata["committed"]
 
     def isReadOnly(self):
         return self.isCommitted()
