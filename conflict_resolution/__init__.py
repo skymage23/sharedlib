@@ -4,12 +4,13 @@ class ImmutableObjectWriteError(Exception):
     def __init__(self):
         super().__init__("sharedlib.conflict_resolution: You have attempted to write to an immutable, read-only object.")
 
-
-
-
 class DoubleCommitError(Exception):
     def __init__(self):
         super().__init__("sharedlib.conflict_resolution: You have attempted to multiple commits on an object that only allows one commit.")
+
+class CommitFailure(Exception):
+    def __init__(self, message):
+        super().__init__("Commit failed: {0}".format(message))
 
 #Freezable is for making an object immutable.
 #The object is frozen in its current state.

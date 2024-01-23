@@ -11,7 +11,7 @@ import_path = our_path.parent.parent.parent.parent
 sys.path.append(import_path.__str__())
 
 from sharedlib import project_management as prjmgt
-
+from sharedlib import conflict_resolution
 
 class TestProjectFramework(unittest.TestCase):
     def setUp(self):
@@ -127,149 +127,193 @@ class TestProjectFSNodeFeatures(TestProjectClassWithSupplementalNodeInfo):
         self.assertTrue(node.required == True)
 
 class TestProjectVerificationLogic(TestProjectClassWithSupplementalNodeInfo):
+
     def test_verifications_success(self):
-        self.project.registerSupplementalFilesystemNode(
-                                                   name = self.fs_dir_node_1_name,
-                                                   path = self.fs_dir_node_1_path,
-                                                   node_type = self.fs_dir_node_1_type
-                                                   )
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=True
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
 
-       #mock Path so that "exists" and "is_dir" succeeds:
-        with mock.patch('pathlib.Path') as my_mock:
-            instance = my_mock.return_value
-            instance.exists.return_value = True
-            instance.is_dir.return_value = True
-            instance.is_file.return_value = False
-            self.assertTrue(self.project.checkProjectTree() is not None)
-            self.assertTrue(self.project.isUsable())
 
-#    def test_verification_failure_missing_required(self)
-#        with mock.patch('pathlib.Path') as mock:
-#            instance = mock.return_value
-#            instance.exists.return_value = False
-#            instance.is_dir.return_value = True
-#            instance.is_file.return_value = False
-#            with self.assertRaises(prjmgt.RequiredFilesystemNodeMissingError):
-#                self.project.checkProjectTree()
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
 
-#class TestProjectFreezeSuccess(TestProjectWithSupplementalNodeInfo):
-#    def setUp(self):
-#        super().setUp()
-#        self.project = Project(
-#                          name = self.name,
-#                          path = self.path,
-#                          third_party_dir_name = self.third_party_dir_name,
-#                          script_dir_name = self.script_dir_name,
-#                          source_dir_name = self.source_dir_name
-#                          )
-#        self.
+            project.registerSupplementalFilesystemNode(
+                                                       name = self.fs_dir_node_1_name,
+                                                       path = pathlib.Path(self.fs_dir_node_1_path.__str__()),
+                                                       node_type = self.fs_dir_node_1_type
+                                                       )
 
-#class TestProjectFrameworkRequiredFSNodeLogic(TestProjectFSNodeFeatures):
-#
-#    def test_framework_required_exists(self):
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=True
-#                ) as mock_object:
-#            self.assertTrue(self.project.checkProjectTree() is None)
-#
-#    def test_framework_required_does_not_exist(self):
-#        #hello
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=False
-#                ) as mock_object:
-#            with self.assertRaises(prjmgt.RequiredFilesystemNodeMissingError):
-#                self.assertTrue(self.project.checkProjectTree(self) is not None)
-#
-#
-#class TestProjectSupplementalFSNodeLogic(TestProjectFSNodeFeatures):
-#
-#    def test_supplemental_insert(self):
-#        #Hello
-#        self.project.registerSupplementalFilesystemNode(
-#                    self.fs_node_name,
-#                    self.fs_node_path,
-#                    self.fs_node_type,
-#                    True
-#                )
-#
-#        self.assertEqual(len(self.project.supplemental_filesystem_nodes), 1)
-#        fs_node = self.project.supplemental_filesystem_nodes.get(self.fs_node_name)
-#        self.assertTrue(fs_node is not None)
-#
-#        self.assertEqual(fs_node.name, self.fs_node_name)
-#        self.assertEqual(fs_node.path, self.fs_node_path)
-#        self.assertEqual(fs_node.node_type, self.fs_node_type)
-#        self.assertTrue(fs_node.required)
-#
-#    def test_supplemental_required_verification_exists(self):
-#        #Hello
-#        self.project.registerSupplementalFilesystemNode(
-#                    self.fs_node_name,
-#                    self.fs_node_path,
-#                    self.fs_node_type,
-#                    True
-#                )
-#
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=True
-#                ) as mock_object:
-#            self.assertTrue(self.project.checkProjectTree() is None)
-#
-#    def test_supplemental_required_verification_does_not_exist(self): 
-#        #Hello
-#        self.project.registerSupplementalFilesystemNode(
-#                    self.fs_node_name,
-#                    self.fs_node_path,
-#                    self.fs_node_type,
-#                    True
-#                )
-#
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=True
-#                ) as mock_object:
-#            with self.assertRaises(prjmgt.RequiredFilesystemNodeMissingError):
-#                self.assertTrue(self.project.checkProjectTree() is not None)
-#
-#    def test_supplemental_optional_verification_exists(self):
-#        #Hello
-#        self.project.registerSupplementalFilesystemNode(
-#                    self.fs_node_name,
-#                    self.fs_node_path,
-#                    self.fs_node_type,
-#                    False
-#                )
-#
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=True
-#                ) as mock_object:
-#            self.assertTrue(self.project.checkProjectTree() is None)
-#
-#    def test_supplemental_optional_verification_does_not_exist(self):
-#        #Hello
-#        self.project.registerSupplementalFilesystemNode(
-#                    self.fs_node_name,
-#                    self.fs_node_path,
-#                    self.fs_node_type,
-#                    False
-#                )
-#
-#        with mock.patch.object(
-#                    pathlib.Path,
-#                    'exists',
-#                    return_value=True
-#                ) as mock_object:
-#            with self.assertRaises(prjmgt.RequiredFilesystemNodeMissingError):
-#                self.assertTrue(self.project.checkProjectTree() is not None)
+            self.assertFalse(project.isUsable())
+            retval = project.checkProjectTree()
+            self.assertTrue(retval is None)
+            self.assertTrue(project.isUsable())
+
+    def test_verification_failure_missing_required(self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=False
+            instance.is_dir.return_value=True
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+            project.registerSupplementalFilesystemNode(
+                                                       name = self.fs_dir_node_1_name,
+                                                       path = self.fs_dir_node_1_path,
+                                                       node_type = self.fs_dir_node_1_type
+                                                       )
+
+            try:
+                retval = project.checkProjectTree()
+                print(retval)
+                self.assertTrue(retval is None)
+            except prjmgt.RequiredFilesystemNodeDependencyError as err:
+                self.assertEqual(err.problem_errcode, prjmgt.FilesystemNode.CheckErrcodes.CHECK_ERRCODE_MISSING)
+
+
+    def test_verification_failure_missing_incorrect_type(self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=False
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+            project.registerSupplementalFilesystemNode(
+                                                       name = self.fs_dir_node_1_name,
+                                                       path = self.fs_dir_node_1_path,
+                                                       node_type = self.fs_dir_node_1_type
+                                                       )
+
+            try:
+                retval = project.checkProjectTree()
+                print(retval)
+                self.assertTrue(retval is None)
+            except prjmgt.RequiredFilesystemNodeDependencyError as err:
+                self.assertEqual(err.problem_errcode, prjmgt.FilesystemNode.CheckErrcodes.CHECK_ERRCODE_INCORRECT_TYPE)
+
+    #Differs in that we don't throw an exception for missing,
+    #non-required dependencies. Instead, we just return a list
+    #of missing dependencies.
+    def test_verification_failure_optional_missing (self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=True #All hard-required dependencies are currently directories.
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+            project.registerSupplementalFilesystemNode(
+                                                       name = "TestFile",
+                                                       path = pathlib.Path("test_file"),
+                                                       node_type = prjmgt.FilesystemNodeType.FILE
+                                                       )
+
+            retval = project.checkProjectTree()
+            self.assertTrue(retval is not None)
+            self.assertEqual(retval[0][0].name, "TestFile")
+            self.assertEqual(retval[0][1], prjmgt.FilesystemNode.CheckErrcodes.CHECK_ERRCODE_INCORRECT_TYPE)
+
+class TestProjectRecordPersistence(TestProjectClassWithSupplementalNodeInfo):
+    def setUp(self):
+        super().setUp()
+        self.project = prjmgt.Project(
+                          name = self.name,
+                          path = self.path,
+                          third_party_dir_name = self.third_party_dir_name,
+                          script_dir_name = self.scripts_dir_name,
+                          source_dir_name = self.source_dir_name
+                          )
+    def tearDown(self):
+        self.project = None
+
+    def test_project_object_persistence(self):
+        #Because we are using PClass from Pyrsistent,
+        #fields on the metadata are immutable and we SHOULD
+        #get an AttributeError thrown at us when we try to
+        #change their value.
+        with self.assertRaises(AttributeError):
+            metadata_copy = self.project.getMetadata()
+            metadata_copy.name = "Ham"
+            self.assertNotEqual(metadata_copy.name, self.project.getMetadata().name)
+
+
+    def test_project_filesystem_node_object_persistence(self):
+        #Because we are using PClass from Pyrsistent,
+        #fields on the filesystem node records are immutable and we SHOULD
+        #get an AttributeError thrown at us when we try to
+        #change their value.
+        with self.assertRaises(AttributeError):
+            hard_required_list_copy = self.project.getHardRequiredFilesystemNodes()
+            hard_required_list_copy["root"].name = "Ham"
+            self.assertNotEqual(
+                    hard_required_list_copy.name,
+                    (self.project.getHardRequiredFilesystemNodes())[0].name
+                    )
+
+
+class TestProjectCommit(TestProjectClassWithSupplementalNodeInfo):
+
+    def test_commit_success(self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=True
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+
+
+            self.assertFalse(project.isUsable())
+            project.commit()
+            self.assertTrue(project.isUsable())
+
+
+            with self.assertRaises(conflict_resolution.ImmutableObjectWriteError):
+                project.registerSupplementalFilesystemNode(
+                                                           name = self.fs_dir_node_1_name,
+                                                           path = pathlib.Path(self.fs_dir_node_1_path.__str__()),
+                                                           node_type = self.fs_dir_node_1_type
+                                                           )
+            self.assertEqual(len(project.getSupplementalFilesystemNodes().values()), 1) #third_party, only
 
 
 if __name__ == "__main__":
