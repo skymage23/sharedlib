@@ -281,6 +281,17 @@ class TestProjectRecordPersistence(TestProjectClassWithSupplementalNodeInfo):
                     (self.project.getHardRequiredFilesystemNodes())[0].name
                     )
 
+    def  test_hard_required_filesystem_node_list_persistence_pre_commit(self):
+         key = prjmgt.Project.ROOT_FILESYSTEM_NODE_KEY
+         copy = self.project.getHardRequiredFilesystemNodes()
+         copy.pop(key)
+         self.assertTrue((self.project.getHardRequiredFilesystemNodes()).get(key, None) is not None)
+
+    def  test_supplemental_filesystem_node_list_persistence_pre_commit(self):
+         key = prjmgt.Project.THIRD_PARTY_FILESYSTEM_NODE_KEY
+         copy = self.project.getSupplementalFilesystemNodes()
+         copy.pop(key)
+         self.assertTrue((self.project.getSupplementalFilesystemNodes()).get(key, None) is not None)
 
 class TestProjectCommit(TestProjectClassWithSupplementalNodeInfo):
 
@@ -315,6 +326,53 @@ class TestProjectCommit(TestProjectClassWithSupplementalNodeInfo):
                                                            )
             self.assertEqual(len(project.getSupplementalFilesystemNodes().values()), 1) #third_party, only
 
+    #Make sure that freezing doesn't break dict persistence:
+    def test_commit_fs_node_dicts_freeze_required_success(self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=True
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+            project.commit()
+
+            key = prjmgt.Project.ROOT_FILESYSTEM_NODE_KEY
+            copy = self.project.getHardRequiredFilesystemNodes()
+            copy.pop(key)
+            self.assertTrue((self.project.getHardRequiredFilesystemNodes()).get(key, None) is not None)
+
+
+    def test_commit_fs_node_dicts_freeze_required_success(self):
+        with mock.patch('pathlib.Path') as MockPath:
+            instance = MockPath.return_value
+            instance.exists.return_value=True
+            instance.is_dir.return_value=True
+            instance.is_file.return_value=False
+            instance.__truediv__.return_value=pathlib.Path()
+
+
+            project = prjmgt.Project(
+                    name = self.name, 
+                    path = pathlib.Path(self.path.__str__()),  #Otherwise, we can't mock this path object 
+                    script_dir_name = self.scripts_dir_name, 
+                    source_dir_name = self.source_dir_name
+                    )
+
+            project.commit()
+
+            key = prjmgt.Project.THIRD_PARTY_FILESYSTEM_NODE_KEY
+            copy = self.project.getSupplementalFilesystemNodes()
+            copy.pop(key)
+            self.assertTrue((self.project.getSupplementalFilesystemNodes()).get(key, None) is not None)
 
 if __name__ == "__main__":
     unittest.main()
