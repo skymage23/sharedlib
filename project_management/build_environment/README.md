@@ -1,0 +1,2 @@
+# NOTICE
+This library has no capabilities to automatically map dependency project names to actual package names for any package manager, nor is it currently feasible for this project's current developers. Name mappings must be provided by users of this library, and facilities are provided to assist in such.  In the future, there MAY be a way to automate mappings using LLMs that are linked to the package repos of the most popular Linux distros, but that is out of scope for now.
