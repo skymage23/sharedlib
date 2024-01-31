@@ -1,4 +1,5 @@
 import pyrsistent
+from .error_handling import validation
 
 class ImmutableObjectWriteError(Exception):
     def __init__(self):
@@ -8,17 +9,10 @@ class DoubleCommitError(Exception):
     def __init__(self):
         super().__init__("sharedlib.conflict_resolution: You have attempted to multiple commits on an object that only allows one commit.")
 
-class CommitFailure(Exception):
+class CommitFailureError(Exception):
     def __init__(self, message):
         super().__init__("Commit failed: {0}".format(message))
 
-#Freezable is for making an object immutable.
-#The object is frozen in its current state.
-#No changes are made other than "freezing" the
-#object.
-class Freezable:
-    def freeze(self):
-        pass
 
 #Committable is for when object state needs
 #to be snapshotted in some way, shape, or form.
@@ -44,11 +38,11 @@ class ReadOnlyAfterCommitCommittable(Committable):
         def __init__(self):
             super().__init__("sharedlib.conflict_resolution.ReadOnlyAfterCommitCommittable: onIntialization callback missing.")
     
-    class KwargVerificationCallbackMissingError(Exception):
+    class KwargValidationCallbackMissingError(Exception):
         def __init__(self):
             super().__init__("sharedlib.conflict_resolution.ReadOnlyAfterCommitCommittable: onKwargVerification callback missing.")
     
-    class KwargVerificationError(Exception):
+    class KwargValidationError(validation.ParameterValidationError):
         def __init__(self, message):
             super().__init__("sharedlib.conflict_resolution.ReadOnlyAfterCommitCommittable: kwarg verification failed. Reason: {0}".format(message))
 
@@ -58,10 +52,10 @@ class ReadOnlyAfterCommitCommittable(Committable):
         self.__ro_committable_metadata = {}
         self.__ro_committable_metadata["committed"] = False
 
-        if self.onVerifyKwargs(**kwargs):
+        if self.onValidateKwargs(**kwargs):
            self.onInitialize(**kwargs)
         else:
-            raise self.KwargVerificationError("onVerifyKwargs returned False, indicating general failure.")
+            raise self.KwargValidationError("onValidateKwargs returned False, indicating general failure.")
 
     def commit(self):
         if self.__ro_committable_metadata["committed"] == True:
@@ -72,12 +66,15 @@ class ReadOnlyAfterCommitCommittable(Committable):
         self.__ro_committable_metadata = pyrsistent.freeze(self.__ro_committable_metadata)
 
     #Keep people from shooting themselves in the foot.
-    def onVerifyKwargs(self, **kwargs):
-        raise self.KwargVerificationCallbackMissingError()
+    def onValidateKwargs(self, **kwargs):
+        raise self.KwargValidationCallbackMissingError()
 
     def onInitialize(self, **kwargs):
         raise self.InitializationCallbackMissingError()
 
+
+    #If the user isn't overwritting this, we just assume they don't have any logic
+    #to run per-commit.
     def onCommit(self):
         pass
 

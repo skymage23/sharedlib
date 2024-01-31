@@ -215,7 +215,7 @@ class Project(ReadOnlyAfterCommitCommittable):
             False
             )
 
-    def onVerifyKwargs(self, **kwargs):
+    def onValidateKwargs(self, **kwargs):
         #Hello
         size = len(kwargs)
         if size < len(self.KWARG_REQUIRED_ARGUMENTS):
@@ -292,7 +292,7 @@ class Project(ReadOnlyAfterCommitCommittable):
         if not self.__in_workable_state:
             retval = self.checkProjectTree()
             if retval is not None:
-                raise conflict_resolution.CommitFailure("""
+                raise conflict_resolution.CommitFailureError("""
 Missing optional dependencies, or optional dependencies are not of the
 correct type according or project spec. If you want to force a commit,
 you can work around this by calling Project.checkProjectTree() before
