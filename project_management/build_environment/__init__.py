@@ -1,6 +1,6 @@
 import enum
 import pyrsistent
-import .build_environment.getters
+from . import getters
 
 #And if they are remoting in?
 #If and when we have a GUI launch feature,
@@ -90,7 +90,7 @@ class BuildEnvironment:
             raise NotImplementedError
 
 
-    def __init__(self, name, env_type, fs_path, primary_etter):
+    def __init__(self, name, env_type, fs_path, primary_getter):
         self.__metadata = BuildEnvironmentMetadata(name, env_type, fs_path, primary_getter)
 
         #Hello

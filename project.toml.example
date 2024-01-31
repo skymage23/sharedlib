@@ -1,0 +1,64 @@
+Project.toml format:
+[Project]
+name = "<name>"
+third_party_dir_name = "<name>"
+script_dir_name = "<name>"
+source_dir_name = "<src>"
+
+[Project.BuildEnvironment]
+inherit_from_super = True #default. Turn this off if you do NOT want to inherit
+                          #the build environment from the super project. In most
+                          #cases, you do.
+                          
+type = "chroot" #default. Possible values are "host", "chroot", "docker", and "inherited".
+                #Automatically changed to "inherited" if this project is being invoked inside
+                #a super project.
+
+path = "" #different types have different default values:
+          #chroot defaults to "./.build_chroots/project_name
+          #"host" throws an error if this value is anything other than "/"
+          #"docker" defaults to the same as "chroot", and the docker image, 
+          #docker container,and docker volume are always named after the
+          #encompassing project.
+
+
+
+[Project.dependencies.<dep_name>]
+version = {major="", minor="", revision="",  misc=""}
+getter = {type = "", misc = {}} #Optional. Defaults to build_environment default getter.
+
+#Example:
+#APTGetter.name_mapping = "google-chrome"
+#GitGetter.getter_args = {url = "", branch = "", tag = "", authentication_file_path=""}
+
+
+#Use this to define repos and whatnot that
+#are not a part of the normal distribution.
+#ancillary_repos are non-standard repos that need to be added
+#to the "package_management"-type getters in order to automate
+#adding that repo to the build system.
+
+[Project.Getters]
+APTGetter.ancillary_repo.google_chrome.url = "https://chrome.googlesource.com"
+APTGetter.ancillary_repo.google_chrome.key_url = "https://chrome.googlesource.com"
+APTGetter.ancillary_repo.google_chrome.architecture="x86_64"
+APTGetter.ancillary_repo.google_chrome.release="sid"
+
+DnfGetter.ancillary_repo.google_chrome.url = "https://somethingredhaty.idunno"
+DnfGetter.ancillary_repo.google_chrome.key_url="https://rpmsneedsigningkeystoo.idunno"
+
+PortageGetter.ancillary_repo = "https://whereveryouarehostingyourportagerepo.idunno"
+PortageGetter.ancillary_overlay.my_overlay.url = "https://pathtoyouroverlay.idunno"
+PortageGetter.set_profile = "some_profile_defined_in_your_repo_or_an_overlay"
+PortageGetter.package_use.package_name = "USE flags"
+
+#Each Getter has attributes that can be defined in the Project TOML file.
+
+
+What about dependencies in the superproject and in different sub-projects that clash with each other?
+
+#Each Getter has the opportunity to set requirements for itself on a dependency-by-dependency basis
+#For example, the GitGetter can require a URL, a branch name, and/or a tag.
+#Getters, when invoked for installation, are given the package name, version, and any other information they require.
+
+#Do we still need the file-and-directory-based dependencies of the previous version of this project?

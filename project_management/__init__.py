@@ -391,25 +391,31 @@ calling Project.commit()
         return self.__in_workable_state
 
 __current_project = None
-def registerProject(
-    name = None,
-    path = None,
-    third_party_dir_name = Project.DEFAULT_THIRD_PARTY_DIR_NAME,
-    script_dir_name = Project.DEFAULT_SCRIPT_DIR_NAME,
-    source_dir_name = Project.DEFAULT_SOURCE_DIR_NAME
-    ):
-    global __current_project
+#def registerProject(
+#    name = None,
+#    path = None,
+#    third_party_dir_name = Project.DEFAULT_THIRD_PARTY_DIR_NAME,
+#    script_dir_name = Project.DEFAULT_SCRIPT_DIR_NAME,
+#    source_dir_name = Project.DEFAULT_SOURCE_DIR_NAME
+#    ):
+#    global __current_project
+#
+#    if  __current_project is None:
+#        __current_project = Project(
+#        name = name,
+#        path = path,
+#        third_party_dir_name = third_party_dir_name,
+#        script_dir_name = script_dir_name,
+#        source_dir_name = source_dir_name
+#        )
+#    else:
+#       raise ProjectManagementError("Only 1 current project at a time is supported at this time.")
+#
 
-    if  __current_project is None:
-        __current_project = Project(
-        name = name,
-        path = path,
-        third_party_dir_name = third_party_dir_name,
-        script_dir_name = script_dir_name,
-        source_dir_name = source_dir_name
-        )
-    else:
-       raise ProjectManagementError("Only 1 current project at a time is supported at this time.")
-
+#This needs to be turned into a factory to generate the current Project
+#when given
 def getCurrentProject():
-    return __current_project
+    if __current_project is not NULL:
+        return __current_project
+    else:
+        #Hello

@@ -1,31 +1,32 @@
-import pathlib
-import sys
+from . import project_management
+__is_initialized=False
+__current_project=None
 
-def get_project_head(head_dir_name=None):
-    if head_dir_name is None:
-        raise ValueError("head_dir_name cannot be None.")
+class UninitializedError(Exception):
+    def __init__(self):
+        super().__init__("Module is uninitialized.")
 
-    if type(head_dir_name) != str:
-        raise ValueError("head_dir_name must be a str.")
+class FailedInitializationError(Exception):
+    def __init__(self, message):
+        super().__init__("Failed initialization: {0}".format(message))
 
-    index = -1
-    proj_head_path = None
-    curr_dir = pathlib.Path.cwd()
-    path_parts = curr_dir.parts
+class ModuleDoubleInitializationError(Exception):
+    def __init__(self):
+        super().__init__("Module is already initialized.")
 
-    for i in range(0,len(path_parts)):
-        if path_parts[i] == head_dir_name:
-            index = i
+def initialize(project_toml_path=None):
+    if __is_initialized:
+        raise ModuleDoubleInitializationError()
 
-    if index < 0:
-        return False, None
-    index = index + 1
-    proj_head_path = pathlib.Path(path_parts[0])
+    if project_toml_path is None:
+        project_toml_path = __try_find_project_toml()
 
-    for i in range (0,index):
-        proj_head_path = proj_head_path / path_parts[i]
-        
-    return True, proj_head_path
+    if project_toml_path is None:
+        raise 
 
+    #Hello
+    __current_project = project_management.Toml.generateProjectFromFile(project_toml_path)
 
-
+def getCurrentProject():
+    if not __is_initialized:
+        raise UninitializedError()
