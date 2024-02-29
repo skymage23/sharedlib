@@ -25,11 +25,10 @@ path = "" #different types have different default values:
 
 [Project.dependencies.<dep_name>]
 version = {major="", minor="", revision="",  misc=""}
-getter = {type = "", misc = {}} #Optional. Defaults to build_environment default getter.
+getter = {type = "", getter_opts = {}} #Optional. Defaults to build_environment default getter.
 
-#Example:
-#APTGetter.name_mapping = "google-chrome"
-#GitGetter.getter_args = {url = "", branch = "", tag = "", authentication_file_path=""}
+#repo value must be a repository defined as using the "ancillery_repos" property
+package_management_options = {apt = {version_mapping=, repo=,}, dnf = {version_mapping=,repo=}}
 
 
 #Use this to define repos and whatnot that
@@ -38,27 +37,36 @@ getter = {type = "", misc = {}} #Optional. Defaults to build_environment default
 #to the "package_management"-type getters in order to automate
 #adding that repo to the build system.
 
-[Project.Getters]
-APTGetter.ancillary_repo.google_chrome.url = "https://chrome.googlesource.com"
-APTGetter.ancillary_repo.google_chrome.key_url = "https://chrome.googlesource.com"
-APTGetter.ancillary_repo.google_chrome.architecture="x86_64"
-APTGetter.ancillary_repo.google_chrome.release="sid"
+[Project.PackageManagement.APT.ancillary_repos.google_chrome]
+url = "https://chrome.googlesource.com"
+key_url = "https://chrome.googlesource.com"
+architecture="x86_64"
+release="sid"
 
-DnfGetter.ancillary_repo.google_chrome.url = "https://somethingredhaty.idunno"
-DnfGetter.ancillary_repo.google_chrome.key_url="https://rpmsneedsigningkeystoo.idunno"
-
-PortageGetter.ancillary_repo = "https://whereveryouarehostingyourportagerepo.idunno"
-PortageGetter.ancillary_overlay.my_overlay.url = "https://pathtoyouroverlay.idunno"
-PortageGetter.set_profile = "some_profile_defined_in_your_repo_or_an_overlay"
-PortageGetter.package_use.package_name = "USE flags"
-
-#Each Getter has attributes that can be defined in the Project TOML file.
+[Project.PackageManagement.DNF.ancillary_repos.google_chrome]
+url = "https://somethingredhaty.idunno"
+signing_key_url="https://rpmsneedsigningkeystoo.idunno"
 
 
-What about dependencies in the superproject and in different sub-projects that clash with each other?
+[Project.PackageManagement.Portage.ancillary_repos.MyPortageRepo]
+url = "https://whereveryouarehostingyourportagerepo.idunno"
 
-#Each Getter has the opportunity to set requirements for itself on a dependency-by-dependency basis
-#For example, the GitGetter can require a URL, a branch name, and/or a tag.
-#Getters, when invoked for installation, are given the package name, version, and any other information they require.
+[Project.PackageManagement.Portage.ancillary_overlays.MyOverlay]
+url = "https://pathtoyouroverlay.idunno"
 
-#Do we still need the file-and-directory-based dependencies of the previous version of this project?
+[Project.PackageManagement.Portage]
+set_profile = "some_profile_defined_in_your_repo_or_an_overlay"
+package_use.package_name = "USE flags"
+
+[Project.VCS.Git]
+http_proxy_auth={username=,password=}
+
+
+
+#What about dependencies in the superproject and in different sub-projects that clash with each other?
+#The python code maintains a set consisting of known dependencies, indexed by name defined here and by
+#    package names, with one index per package management system. If there is a conflict, the build will
+#    fail. If the conflict is unavoidable, then one of the offending project must be build in a separate
+#    chroot. If one fo the projects involved in the conflict is the base superproject, then the subproject
+#    will always be chosen to run in an independent chroot. For this reason, project TOML files must always
+#    list ALL required dependencies and must not expect dependencies to be pulled by any other project.

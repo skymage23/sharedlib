@@ -118,6 +118,18 @@ class BuildEnvironment:
     def attemptSoftwareInstallWithElevatedPrivileges(self, getter=self.metadata.primary_getter):
         raise NotImplementedError
 
+    #Returns a tuple containing the new command and new command_args,
+    #everything having been restructured to work with the OS's privilege
+    #elevation command.
+    def constructCommandWithPrivilegeElevation(self, command, command_args):
+        raise NotImplementedError
+
+
+    #What do we do if the program we want is not on the system PATH?
+    #If that happens, the subprocess module throws a "FileNotFoundError".
+    def runCommand(self, command, command_arguments, privilege_elevation=False):
+        #module multiprocessing.  POpen stuff here.
+
     #We will need this to get passwords for "sudo" and such.
     def __getUserInputPrompt(self, ui_type):
         raise NotImplementedError
