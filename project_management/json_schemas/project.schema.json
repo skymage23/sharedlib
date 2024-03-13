@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cnugent-dev.net/sharedlib/project_management/project.schema.json",
+  "title": "Project",
+  "description": "A project to be supported by sharedlib.project_management",
+  "type": "object",
+  "properties:": {
+    "name": {
+       "type": "string",
+       "minLength": 1
+    },
+    "credentials_directory_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "build_environment" : {
+       "type": "string",
+       "minLength": 1
+    },
+    "build_environment_args": {
+      "type": "object"
+    },
+    "dependency_specifications": {
+      "type": "object",
+      "properties": {
+        #Hello
+	"manual_path_specifications": {
+          "type": "array",
+	  "items": {
+            "type": "object",
+	    "properties": {
+              "name": {
+                "type": "string",
+		"minLength": 1
+              },
+	      "path": {
+                "type": "string",
+		"minLength": 1
+	      }
+	    },
+	    "required": ["name", "path"]
+	  }
+	},
+	"getter_global_settings": {
+	  "type": "object",
+	  "properties": {
+            #Hello
+	    "path": {
+              "type": "string",
+	      "minLength": 1
+	    },
+	    "VCS": {
+              "type": "object",
+	      "properties": {
+                "git": {
+                  "type": "object",
+		  "properties": {
+                    "credentials": {
+                      "type": "object",
+		      "properties": {
+                        "username": {
+                          "type": "string",
+			  "minLength": 1
+			},
+			"password": {
+                          "type": "string",
+			  "minLength": 1
+			}
+		      }
+		    }
+	          } 
+		}
+	      }
+	    },
+	    "SubProject": {
+              "type": "object",
+	      "properties": {
+                #Hello
+		"global_subproject_path": {
+                  "type": "string",
+		  "minLength": 1
+		}
+	      }
+            }
+          } ,
+	  "dependencies": {
+	    "type": array,
+	    "item": {
+              #Hello
+	      "type": "object",
+	      "properties": {
+                #Hello:
+		"name": {
+                  "type": "string",
+		  "minLength": 1
+	        },
+                "type": {
+                  "type": "string",
+		  "minLength": 1
+	        },
+		"version": {
+                  "type": "object",
+		  "properties": {
+                    "major": {
+                      "type": "number",
+		      "minimum": 0
+		    },
+		    "minor": {
+                      "type": "number",
+		      "minimum": 0
+	            },
+		    "revision": {
+                      "type": "number",
+		      "minimum": 0
+	            },
+		    "misc": {
+                      "type": "string"
+	            }
+                  },
+		  "required": ["major", "minor"]
+		},
+		"getter_settings": {
+                  "type": "object",
+		  "properties": {
+                    "ManualInstall": {
+                      "type": "object",
+		      "properties": {
+                        "VCS": {
+                          "type": "object",
+			  "properties": {
+                            "git": {
+                              "type": "object",
+			      "properties": {
+                                "commit": {
+                                  "type": "string",
+				  "minLength": 1
+			        },
+				"tag": {
+                                  "type": "string",
+				  "minLength": 1
+			        },
+			        "branch": {
+                                  "type": "string",
+				  "minLength": 1
+			        },
+				#You stopped here.
+			      }
+                            }#end git
+		          }
+		        }# end VCS
+		      }
+	            }#end ManualInstall
+	          }
+		}# end getter_settings:
+	      },
+	      "required": ["name", "type"]
+            }
+	  }
+	} #end_dependency_specifications_properties:
+      } #end_dependency_specifications
+    }
+  },
+  "required": ["name", "build_environment", "build_environment_type`"]
+}

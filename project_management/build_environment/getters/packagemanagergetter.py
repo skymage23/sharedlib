@@ -6,9 +6,10 @@ class RepoConfig(pyrsistent.PClass):
     package_manager = field(mandatory=True, type=str)
     name =  field(mandatory=True, type=str)
     url = field(mandatory=True, type=str)
-    signing_key_url = field( mandatory=True 
-            invariant=lambda data: return ((data is None) or (isinstance(data, str)))
-            )
+    signing_key_url = field(
+        mandatory=True 
+        invariant=lambda data: return \
+                ((data is None) or (isinstance(data, str)))
 
     def __init__(self):
         super().__init__()

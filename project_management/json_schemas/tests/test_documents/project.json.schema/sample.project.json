@@ -1,0 +1,93 @@
+#Don't forget to install jsonschema
+#Don't forget to write the JSON schema for this:
+
+{
+   name: "Package",
+   #Valid values are: "chroot", "system", "docker", and 
+   #"inherit_from_super"
+   path: "<default: directory_of_this_file."
+   credentials_directory_path: "<default: project_path>"
+   build_environment: "chroot", 
+   build_environment_args: {
+       #Hello
+       "chroot": {   #Required, if using "chroot" build_environment.
+           path: "<path_to_chroot>"
+       }
+   },
+   
+   dependency_specifications: {
+       manual_path_specifications: [
+           {
+               name: "third_party",
+               path: "<project>/third_party"
+           }
+       ],
+       getter_global_settings: {
+           ManualInstall: {
+               #Must be a path defined in "manual_install_paths"
+               path: "" #Common directory path for all manually installed dependencies.
+               VCS: {
+                   git: {
+                       #GitGetter arguments go here.
+                       credentials: {
+                           username: "username"
+                           password: "password"
+                       }
+                   },
+               },
+               SubProject: {
+                  #Special value "<manual_install>":  Path defined by ManualInstall.path.
+                  #If it does not exist, then the build system must fail gracefully.
+                  #If not using "<manual_install>", must be a path defined in "manual_path_specifications".
+                  #Or, must not be defined at all. If so, subproject dependency specs must specify
+                  #their own path.
+                  global_subproject_path: "" #Path to directory containing subprojects.
+               },
+           },
+       },
+       
+       dependencies:[
+           #Actual dependencies go here.
+           {
+               name: "linux-kernel",
+               type: "Project.ManualInstall.VCS.git"
+               version: {
+                    major: 6,       #number
+                    minor: 6,       #number
+                    revision: 8,     #number
+                    misc: "",
+               },
+               getter_settings: {
+                   ManualInstall: {
+                       VCS: {
+                           git: {
+                                #These have the following priority: 1.: commit, 2.: branch, 3.: tag.
+                                commit: ""
+                                tag: ""
+                                branch: ""
+                                
+                                #Optional:
+                                credentials_name:"  
+                        }
+                      },
+                       manual_path_specification: "third_party", #Must be a spec defined in "manual_path_specifications"
+                       build_script: "<project>"
+                   }
+               },
+           }, #End "linux-kernel"
+           
+           {
+               name: "some_C++_component",
+               type: "Project.SubProject",
+               getter_settings: {
+                  ManualInstall: {
+                      SubProject: {
+                          path="<project>/<path_to_subproject>"
+                          install_dir="" #Optional. Tell subproject where to install its artifacts.
+                      },
+                  }
+               }
+           } #End "some_C++_component"
+       ] #End dependencies.
+   },
+}# End project.

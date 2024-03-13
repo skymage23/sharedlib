@@ -23,9 +23,25 @@ path = "" #different types have different default values:
 
 
 
-[Project.dependencies.<dep_name>]
+#Non-package dependencies need a target directory
+#in which to place their artifacts.
+[Project.Dependencies.NonPackageDependencies.Paths.third_party]
+path="./third_party"
+
+#Dependencies can roughly be divided into two types:
+#PackageManagement dependencies and ManualDependencies.
+#Both 
+
+[Project.Dependencies.NonPackageDependencies.VCS.Git]
+http_proxy_auth={username=,password=}
+
+[Project.Dependencies.NonPackageDependencies.linux_kernel]
+
+
+[Project.Dependencies.PackageManagementDependencies.<dep_name>]
 version = {major="", minor="", revision="",  misc=""}
-getter = {type = "", getter_opts = {}} #Optional. Defaults to build_environment default getter.
+type = ""
+type = 
 
 #repo value must be a repository defined as using the "ancillery_repos" property
 package_management_options = {apt = {version_mapping=, repo=,}, dnf = {version_mapping=,repo=}}
@@ -58,8 +74,8 @@ url = "https://pathtoyouroverlay.idunno"
 set_profile = "some_profile_defined_in_your_repo_or_an_overlay"
 package_use.package_name = "USE flags"
 
-[Project.VCS.Git]
-http_proxy_auth={username=,password=}
+
+
 
 
 
