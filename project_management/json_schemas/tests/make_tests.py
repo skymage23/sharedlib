@@ -41,7 +41,12 @@ class JSONSchemaAtrributeDataType:
     def __init__(self, test_gen_system_type, schema_type):
         self.test_gen_system_type
         self.schema_type
+        self.__generator_callback_table = {}
 
+    def __registerGeneratorCallbacks(self):
+        self.__callback_table[JSONSchemaTestTypes.META_WRONG_TYPE] = __generateTestWrongType
+        self.__callback_table[JSONSchemaTestTypes.META_MISSING] = __generateTestMissing
+        
     def __generateTestWrongType(self, attribute_name: str):
         pass
 
@@ -58,7 +63,8 @@ class JSONSchemaAttributeStringDataType(JSONSchemaAttributeDataType):
     def __init__(self):
         super().__init__("str", "string")
 
-    def __generateTestShort(self, attribute_name: str)
+    def __generateTestShort(self, attribute_name: str):
+        
 
     def __generateTest(self, attribute_name: str):
         #Hello:
@@ -66,7 +72,8 @@ class JSONSchemaAttributeStringDataType(JSONSchemaAttributeDataType):
 
 
 class JSONSchemaTestFile:
-
+    JSON_FILE_GOOD_SAMPLE = "good_sample"
+    JSON_FILENAME_SECTIONS_MIN_LENGTH = 3
     #Return tuple:
     #segments, isGoodSample.
     @staticmethod
@@ -76,13 +83,13 @@ class JSONSchemaTestFile:
         temp = filename.split('.')
         (temp[0]).strip()
 
-        if temp[0] = JSON_FILE_GOOD_SAMPLE:
+        if temp[0] == JSONSchemaTestFile.JSON_FILE_GOOD_SAMPLE:
             return None, True
         
 
         temp = temp[0].split('_')
  
-        if len(temp) < self.JSON_FILENAME_SECTIONS_MIN_LENGTH:
+        if len(temp) < JSONSchemaTestFile.JSON_FILENAME_SECTIONS_MIN_LENGTH:
             raise JSONSchemaMakeTestError(
                 schema_name,
                 None,
@@ -98,8 +105,6 @@ class JSONSchemaTestFile:
             #Hello:
             file_path = Path(file_path)
         
-        basename = file_path.name
-
         temp = None
         temp, retval.invert_test_correct_condition = JSONSchemaTestFile.__parseJsonFilename(basename)
 
@@ -108,12 +113,23 @@ class JSONSchemaTestFile:
         retval.attribute = temp[0]
         retval.type = temp[1]
         retval.test = temp[2]
+
+    @staticmethod
+    def __generateTestClassHeader(self, attribute_name; str):
+        test_class_start = "class JSONSchemaAttributeTest_{}:".format(attribute_name)
+
+    def __init__(self):
+        #Hello:
+        self.path = None
+        self.attribute = None
+        self.type = None
+        self.test = None
+
+    def generateTestFile(self)
         
 
 
 class SchemaTestFactory:
-    JSON_FILE_GOOD_SAMPLE = "good_sample"
-    JSON_FILENAME_SECTIONS_MIN_LENGTH = 3
     def __init__(self,
         schema_name: str = None
         schema_path: str = None
@@ -199,8 +215,7 @@ class SchemaParseTester(unittest.TestCase):
     def generateTestFileRAM(self):
         #Hello:
         retval_arr = [self.__generateTestHeader()]
-
-        
+                 
         
 
     def addJsonTestFile(self,
